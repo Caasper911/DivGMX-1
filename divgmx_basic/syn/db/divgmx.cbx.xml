@@ -1,0 +1,12 @@
+<?xml version="1.0" ?>
+<LOG_ROOT>
+	<PROJECT NAME="divgmx">
+		<CBX_INST_ENTRY INSTANCE_NAME="|basic|hdmi:U2|hdmidataencoder:dataenc|lpm_divide:Div1" CBX_FILE_NAME="lpm_divide_8jm.tdf"/>
+		<CBX_INST_ENTRY INSTANCE_NAME="|basic|vram:U5|altsyncram:altsyncram_component" CBX_FILE_NAME="altsyncram_qjd2.tdf"/>
+		<CBX_INST_ENTRY INSTANCE_NAME="|basic|altpll0:U1|altpll:altpll_component" CBX_FILE_NAME="altpll_he63.tdf"/>
+		<CBX_INST_ENTRY INSTANCE_NAME="|basic|hdmi:U2|altddio_out1:ddio_inst|altddio_out:ALTDDIO_OUT_component" CBX_FILE_NAME="ddio_out_n8j.tdf"/>
+		<CBX_INST_ENTRY INSTANCE_NAME="|basic|hdmi:U2|altshift_taps:q_pipe_rtl_0" CBX_FILE_NAME="shift_taps_l6m.tdf"/>
+		<CBX_INST_ENTRY INSTANCE_NAME="|basic|hdmi:U2|hdmidataencoder:dataenc|lpm_divide:Div0" CBX_FILE_NAME="lpm_divide_8jm.tdf"/>
+		<CBX_INST_ENTRY INSTANCE_NAME="|basic|rom:U6|altsyncram:altsyncram_component" CBX_FILE_NAME="altsyncram_76a1.tdf"/>
+	</PROJECT>
+</LOG_ROOT>

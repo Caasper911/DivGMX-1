@@ -228,8 +228,6 @@ signal saa_out_l	: std_logic_vector(7 downto 0);
 signal saa_out_r	: std_logic_vector(7 downto 0);
 
 signal trdos		: std_logic;
-signal rom_a13		: std_logic;
-signal rom_a14		: std_logic;
 
 
 component saa1099
@@ -326,9 +324,7 @@ port map (
 
 U6: entity work.rom
 port map (
-	address(12 downto 0)	=> a_i(12 downto 0),
-	address(13) => rom_a13,
-	address(14) => rom_a14,
+	address		=> a_i(12 downto 0),
 	clock		=> clk_bus,
 	q		=> rom_do);
 
@@ -592,12 +588,11 @@ end process;
 
 ------------------------------------------------------------------------------
 -- Селектор
-selector <=	
-		X"0" when (mreq_n_i = '0' and rd_n_i = '0' and a_i(15 downto 14) = "00" and divmmc_amap = '0' and divmmc_e3reg(7) = '0') else			-- ROM #0000-#3FFF
+selector <=	--X"0" when (mreq_n_i = '0' and rd_n_i = '0' and a_i(15 downto 14) = "00" and divmmc_amap = '0' and divmmc_e3reg(7) = '0') else			-- ROM #0000-#3FFF
 		X"1" when (mreq_n_i = '0' and rd_n_i = '0' and a_i(15 downto 13) = "000" and (divmmc_amap or divmmc_e3reg(7)) /= '0' and kb_fn(6) = '1') else	-- DivMMC ESXDOS ROM #0000-#1FFF
 		X"2" when (mreq_n_i = '0' and rd_n_i = '0' and a_i(15 downto 13) = "001" and (divmmc_amap or divmmc_e3reg(7)) /= '0' and kb_fn(6) = '1') else	-- DivMMC ESXDOS RAM #2000-#3FFF
 		-- Ports
-		X"3" when (iorq_n_i = '0' and rd_n_i = '0' and a_i(7 downto 0) = X"FE") else							-- Read port #xxFE Keyboard
+		X"3" when (iorq_n_i = '0' and rd_n_i = '0' and a_i(7 downto 0) = X"FE" and kb_fn(7) = '1') else							-- Read port #xxFE Keyboard
 		X"4" when (iorq_n_i = '0' and rd_n_i = '0' and a_i(7 downto 0) = X"EB" and kb_fn(6) = '1') else							-- DivMMC ESXDOS port
 		X"5" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FFFD" and ssg_sel = '0') else								-- TurboSound SSG0
 		X"6" when (iorq_n_i = '0' and rd_n_i = '0' and a_i = X"FFFD" and ssg_sel = '1') else								-- TurboSound SSG1
@@ -615,25 +610,24 @@ selector <=
 process (selector, rom_do, divmmc_do, sdr_do, ssg0_do_bus, ssg1_do_bus, zc_do_bus, ms0_z, ms0_b, ms0_x, ms0_y, ms1_z, ms1_b, ms1_x, ms1_y, port_7ffd_reg, kb_do_bus)
 begin
 	case selector is
-		when X"0" => BUS_D <= rom_do; BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '0'; rom_a13 <= not a_i(13); rom_a14 <= a_i(13);							-- ROM
-		when X"1" => BUS_D <= rom_do; BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '0'; rom_a13 <= '0'; rom_a14 <= '0';			-- ROM DivMMC ESXDOS
+--		when X"0" => BUS_D <= rom_do;										-- ROM
+		when X"1" => BUS_D <= rom_do; BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '0';			-- ROM DivMMC ESXDOS
 		when X"2" => BUS_D <= sdr_do; BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '0';			-- SDRAM
 		-- Ports
-		when X"3" => BUS_D <= ("ZZZ" & kb_do_bus) and (reg_d_i(7)&"Z"&reg_d_i(5 downto 0)); BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';	-- Read port #xxFE Keyboard
-		--when X"3" => BUS_D <= "111" & kb_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';	-- Read port #xxFE Keyboard
-		when X"4" => BUS_D <= divmmc_do; BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- DivMMC ESXDOS port
-		when X"5" => BUS_D <= ssg0_do_bus; BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- TurboSound SSG0
-		when X"6" => BUS_D <= ssg1_do_bus; BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- TurboSound SSG1
-		when X"7" => BUS_D <= zc_do_bus; BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Z-Controller
-		when X"8" => BUS_D <= ms0_z(3 downto 0) & '1' & not ms0_b(2) & not ms0_b(0) & not ms0_b(1); BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse0 port key, z
-		when X"9" => BUS_D <= ms0_x; BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';			-- Mouse0 port x
-		when X"A" => BUS_D <= not ms0_y; BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse0 port y
-		when X"B" => BUS_D <= ms1_z(3 downto 0) & '1' & not ms1_b(2) & not ms1_b(0) & not ms1_b(1); BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse1 port key, z
-		when X"C" => BUS_D <= ms1_x; BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';			-- Mouse1 port x
-		when X"D" => BUS_D <= not ms1_y; BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse1 port y
-		when X"E" => BUS_D <= port_7ffd_reg; BUS_NROMOE <= '1'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Read port #7FFD
+		when X"3" => BUS_D <= "111" & kb_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';	-- Read port #xxFE Keyboard
+		when X"4" => BUS_D <= divmmc_do; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- DivMMC ESXDOS port
+		when X"5" => BUS_D <= ssg0_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- TurboSound SSG0
+		when X"6" => BUS_D <= ssg1_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- TurboSound SSG1
+		when X"7" => BUS_D <= zc_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Z-Controller
+		when X"8" => BUS_D <= ms0_z(3 downto 0) & '1' & not ms0_b(2) & not ms0_b(0) & not ms0_b(1); BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse0 port key, z
+		when X"9" => BUS_D <= ms0_x; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';			-- Mouse0 port x
+		when X"A" => BUS_D <= not ms0_y; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse0 port y
+		when X"B" => BUS_D <= ms1_z(3 downto 0) & '1' & not ms1_b(2) & not ms1_b(0) & not ms1_b(1); BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse1 port key, z
+		when X"C" => BUS_D <= ms1_x; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';			-- Mouse1 port x
+		when X"D" => BUS_D <= not ms1_y; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Mouse1 port y
+		when X"E" => BUS_D <= port_7ffd_reg; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- Read port #7FFD
 --		when X"F" => BUS_D <= i2c_do_bus; BUS_NROMOE <= '0'; BUF_DIR(1) <= '1'; BUS_NIORQGE <= '1';		-- I2C
-		when others => BUS_D <= (others => 'Z'); BUS_NROMOE <= '1'; BUF_DIR(1) <= '0'; BUS_NIORQGE <= '0';
+		when others => BUS_D <= (others => 'Z'); BUS_NROMOE <= '0'; BUF_DIR(1) <= '0'; BUS_NIORQGE <= '0';
 	end case;
 end process;
 		
